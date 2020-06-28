@@ -1,0 +1,55 @@
+ARG GSTREAMER_VERSION=1.16.2
+
+FROM ggoussard/gstreamer:${GSTREAMER_VERSION} as base
+
+FROM base as build
+
+ARG PREFIX=/tmp/amz-s3-gst
+
+WORKDIR /usr/src
+
+ENV LD_LIBRARY_PATH=${PREFIX}/lib64:${PREFIX}/lib
+ENV PKG_CONFIG_PATH=${PREFIX}/lib64/pkgconfig:${PREFIX}/lib/pkgconfig
+
+RUN apk add --no-cache \
+            gst-plugins-base-dev  \
+            gst-plugins-bad-dev  \
+            gst-editing-services-dev  \
+            gst-rtsp-server-dev  \
+            gstreamer-dev \
+            gstreamermm-dev \
+            openssl-dev \
+            meson \
+	    git \
+	    gcc \
+	    g++ \
+	    make \
+	    cmake \
+	    musl-dev \
+	    curl-dev \
+            --
+
+RUN git clone --depth=1 https://github.com/aws/aws-sdk-cpp.git && \
+    cd aws-sdk-cpp && \
+    mkdir build && \
+    cd build && \
+    cmake  ..  -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_ONLY="s3;sts" -DBUILD_SHARED_LIBS=ON && \
+    make -j `nproc` && \
+    make install 
+
+
+RUN git clone --depth=1 https://github.com/amzn/amazon-s3-gst-plugin.git && \
+    cd amazon-s3-gst-plugin && \
+    meson --prefix=${PREFIX} -Dpkg_config_path=${PKG_CONFIG_PATH} build && \
+    cd build && \
+    ninja && \
+    ninja install
+
+FROM base as release
+
+ARG PREFIX=/tmp/amz-s3-gst
+
+ENV GST_PLUGIN_PATH=/usr/local/lib/gstreamer-1.0
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+COPY --from=build ${PREFIX}/lib* /usr/local/lib/
