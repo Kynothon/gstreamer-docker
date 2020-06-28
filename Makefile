@@ -10,13 +10,15 @@ armv7:=linux/arm/v7
 param = $(lastword $(subst -, ,$1))
 
 gstreamer: gstreamer-amd64 gstreamer-arm64 gstreamer-armv7
+	@docker buildx build --platform $(amd64),$(arm64),$(armv7) -t $(GSTREAMER_REPO) -f $(GSTREAMER_DOCKERFILE) --push .
 
-aws: gstreamer-aws-amd64
+aws: aws-amd64 aws-arm64 aws-armv7
+	@docker buildx build --platform $(amd64),$(arm64),$(armv7) -t $(CLOUD_REPO) -f $(CLOUD_DOCKERFILE) --push .
 
 gstreamer-%:
 	$(eval arch=$(call param, $@))
-	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) -f $(GSTREAMER_DOCKERFILE) --push .
+	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) -f $(GSTREAMER_DOCKERFILE) -push .
 
-gstreamer-aws-%:
+aws-%:
 	$(eval arch=$(call param, $@))
-	@docker buildx build --platform $($(arch)) -t $(CLOUD_REPO) -f $(CLOUD_DOCKERFILE) --push .
+	@docker buildx build --platform $($(arch)) -t $(CLOUD_REPO) -f $(CLOUD_DOCKERFILE) -push .

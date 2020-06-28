@@ -5,6 +5,7 @@ FROM ggoussard/gstreamer:${GSTREAMER_VERSION} as base
 FROM base as build
 
 ARG PREFIX=/tmp/amz-s3-gst
+ARG AWS_SDK_TAG=1.7.364
 
 WORKDIR /usr/src
 
@@ -29,7 +30,7 @@ RUN apk add --no-cache \
 	    curl-dev \
             --
 
-RUN git clone --depth=1 https://github.com/aws/aws-sdk-cpp.git && \
+RUN git clone --depth=1 --branch ${AWS_SDK_TAG} https://github.com/aws/aws-sdk-cpp.git && \
     cd aws-sdk-cpp && \
     mkdir build && \
     cd build && \
