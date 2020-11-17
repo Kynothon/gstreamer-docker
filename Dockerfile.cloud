@@ -16,9 +16,7 @@ RUN apk add --no-cache \
             gst-plugins-base-dev  \
             gst-plugins-bad-dev  \
             gst-editing-services-dev  \
-            gst-rtsp-server-dev  \
             gstreamer-dev \
-            gstreamermm-dev \
             openssl-dev \
             meson \
 	    git \
@@ -35,7 +33,7 @@ RUN git clone --depth=1 --branch ${AWS_SDK_TAG} https://github.com/aws/aws-sdk-c
     mkdir build && \
     cd build && \
     cmake  ..  -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_ONLY="s3;sts" -DBUILD_SHARED_LIBS=ON && \
-    make -j `nproc` && \
+    make -j $(( `nproc` / 3 )) && \
     make install 
 
 
