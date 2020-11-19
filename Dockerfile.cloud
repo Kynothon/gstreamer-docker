@@ -1,11 +1,9 @@
-ARG GSTREAMER_VERSION=1.16.2
+ARG GST_VERSION=1.18.1
 
-FROM ggoussard/gstreamer:${GSTREAMER_VERSION} as base
+FROM ggoussard/gstreamer:${GST_VERSION}-dev as gst-plugins-amazon-s3
 
-FROM base as build
-
-ARG PREFIX=/tmp/amz-s3-gst
-ARG AWS_SDK_TAG=1.7.364
+ARG AWS_SDK_TAG=1.8.90
+ARG GST_MODULE=amazon-s3-gst-plugin
 
 WORKDIR /usr/src
 
@@ -13,42 +11,25 @@ ENV LD_LIBRARY_PATH=${PREFIX}/lib64:${PREFIX}/lib
 ENV PKG_CONFIG_PATH=${PREFIX}/lib64/pkgconfig:${PREFIX}/lib/pkgconfig
 
 RUN apk add --no-cache \
-            gst-plugins-base-dev  \
-            gst-plugins-bad-dev  \
-            gst-editing-services-dev  \
-            gstreamer-dev \
+            curl-dev \
             openssl-dev \
-            meson \
-	    git \
-	    gcc \
-	    g++ \
-	    make \
-	    cmake \
-	    musl-dev \
-	    curl-dev \
-            --
+            -- \
+    && git config --global advice.detachedHead false
 
-RUN git clone --depth=1 --branch ${AWS_SDK_TAG} https://github.com/aws/aws-sdk-cpp.git && \
+RUN git clone --quiet --depth=1 --branch ${AWS_SDK_TAG} https://github.com/aws/aws-sdk-cpp.git && \
     cd aws-sdk-cpp && \
     mkdir build && \
     cd build && \
     cmake  ..  -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_ONLY="s3;sts" -DBUILD_SHARED_LIBS=ON && \
-    make -j $(( `nproc` / 3 )) && \
+    make -j $(( `nproc`)) && \
     make install 
 
 
-RUN git clone --depth=1 https://github.com/amzn/amazon-s3-gst-plugin.git && \
-    cd amazon-s3-gst-plugin && \
-    meson --prefix=${PREFIX} -Dpkg_config_path=${PKG_CONFIG_PATH} build && \
-    cd build && \
-    ninja && \
-    ninja install
+RUN git clone --quiet --depth=1 https://github.com/amzn/${GST_MODULE}.git \
+	&& meson --prefix=${PREFIX} --buildtype=plain -Dpackage-origin=https://github.com/amzn/${GST_MODULE}.git ${GST_MODULE} ${GST_MODULE}_build \
+	&& meson compile -C ${GST_MODULE}_build \
+	&& meson install -C ${GST_MODULE}_build
 
-FROM base as release
+FROM ggoussard/gstreamer:${GST_VERSION} as release
 
-ARG PREFIX=/tmp/amz-s3-gst
-
-ENV GST_PLUGIN_PATH=/usr/local/lib/gstreamer-1.0
-ENV LD_LIBRARY_PATH=/usr/local/lib
-
-COPY --from=build ${PREFIX}/lib* /usr/local/lib/
+COPY --from=gst-plugins-amazon-s3 ${PREFIX}/lib/ /usr/local/lib

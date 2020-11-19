@@ -3,7 +3,7 @@ ARG ALPINE_TAG=3.12
 
 FROM alpine:${ALPINE_TAG} as buildbase
 
-ENV GST_VERSION=1.18.1
+ARG GST_VERSION=1.18.1
 #gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav
 
 WORKDIR /usr/src
