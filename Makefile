@@ -37,8 +37,8 @@ gstreamer-dev-%:
 
 gstreamer-%:
 	$(eval arch=$(call param, $@))
-	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) .
+	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) --load .
 
 gstreamer-aws-%:
 	$(eval arch=$(call param, $@))
-	@docker buildx build --platform $($(arch)) -t $(CLOUD_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(CLOUD_DOCKERFILE) .
+	@docker buildx build --platform $($(arch)) -t $(CLOUD_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(CLOUD_DOCKERFILE) --load .
