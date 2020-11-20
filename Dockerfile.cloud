@@ -32,4 +32,10 @@ RUN git clone --quiet --depth=1 https://github.com/amzn/${GST_MODULE}.git \
 
 FROM ggoussard/gstreamer:${GST_VERSION} as release
 
+RUN apk add --no-cache \
+            libcurl \
+            libssl1.1 \
+            libcrypto1.1 \
+            -- 
+
 COPY --from=gst-plugins-amazon-s3 ${PREFIX}/lib/ /usr/local/lib
