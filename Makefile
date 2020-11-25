@@ -9,25 +9,20 @@ DEV_REPO?=$(GSTREAMER_REPO)-dev
 include utils.mk
 
 gstreamer: gstreamer-amd64 gstreamer-arm64 gstreamer-armv7
-	$(eval platform=$(call platforms,$^))
-	@docker buildx build --platform $(platform) -t $(GSTREAMER_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) --push .
-
-gstreamer-dev: gstreamer-dev-amd64 gstreamer-dev-arm64 gstreamer-dev-armv7
-	$(eval platform=$(call platforms,$^))
-	@docker buildx build --platform $(platform) -t $(DEV_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) --target=gst-plugins-base --push .
-
-gstreamer-aws: gstreamer-aws-amd64 gstreamer-aws-arm64 gstreamer-aws-armv7
-	$(eval platform=$(call platforms,$^))
-	@docker buildx build --platform $(platform) -t $(CLOUD_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(CLOUD_DOCKERFILE) --push .
-
-gstreamer-dev-%:
-	$(eval arch=$(call param,$@))
-	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) --target=gst-plugins-base --load .
+	$(call buildxx,$@,$(GSTREAMER_REPO),$(GSTREAMER_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG),push)
 
 gstreamer-%:
-	$(eval arch=$(call param,$@))
-	@docker buildx build --platform $($(arch)) -t $(GSTREAMER_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(GSTREAMER_DOCKERFILE) --load .
+	$(call buildxx,$@,$(GSTREAMER_REPO),$(GSTREAMER_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG),load)
+
+gstreamer-dev: gstreamer-dev-amd64 gstreamer-dev-arm64 gstreamer-dev-armv7
+	$(call buildxx,$@,$(GSTREAMER_REPO),$(GSTREAMER_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG) --target=gst-plugins-base,push)
+
+gstreamer-dev-%:
+	$(call buildxx,$@,$(GSTREAMER_REPO),$(GSTREAMER_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG) --target=gst-plugins-base,load)
+
+gstreamer-aws: gstreamer-aws-amd64 gstreamer-aws-arm64 gstreamer-aws-armv7
+	$(call buildxx,$^,$(CLOUD_REPO),$(CLOUD_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG),push)
 
 gstreamer-aws-%:
-	$(eval arch=$(call param,$@))
-	@docker buildx build --platform $($(arch)) -t $(CLOUD_REPO) --build-arg GST_VERSION=$(GSTREAMER_TAG) -f $(CLOUD_DOCKERFILE) --load .
+	$(call buildxx,$@,$(CLOUD_REPO),$(CLOUD_DOCKERFILE),--build-arg GST_VERSION=$(GSTREAMER_TAG),load)
+

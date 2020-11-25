@@ -1,5 +1,7 @@
 # Export Docker Experimental to use buildx plugin
 export DOCKER_CLI_EXPERIMENTAL=enabled
+# Silence warning if not set
+export BUILDX_NO_DEFAULT_LOAD=false
 
 # Docker Platforms
 amd64:=linux/amd64
@@ -20,3 +22,11 @@ param = $(lastword $(subst -, ,$1))
 
 # $(call platforms,x-a y-b z-c) => a,b,c
 platforms = $(call list_,$(call arch_,$1))
+
+# $call(buildxx,PLATFORMS,DOCKER_REPO,DOCKER_FILE,EXTRAS,ACTION)
+# ACTION = load | push
+define buildxx
+	$(eval platform=$(call platforms,$1))
+	@docker buildx build --platform $(platform) -t $2 -f $3 $4 --$(5) .
+endef
+
